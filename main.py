@@ -7,6 +7,8 @@ technical articles to Dev.to with AI-generated cover images.
 
 Usage:
     python main.py "Your article topic here"
+    python main.py --file path/to/transcript.txt
+    python main.py --content "Your content here"
 
 Environment Variables Required:
     DEV_TO_API_KEY - Your Dev.to API key
@@ -87,35 +89,80 @@ def create_article_swarm() -> Swarm:
     return swarm
 
 
-def generate_article(topic: str) -> dict:
-    """Generate a Dev.to article for the given topic.
+def generate_article(input_data: str, input_type: str = "topic") -> dict:
+    """Generate a Dev.to article from the given input.
 
     Args:
-        topic: The topic/subject for the article
+        input_data: The input content (topic, file path, or direct content)
+        input_type: Type of input - "topic", "file", or "content"
 
     Returns:
         dict: Result containing article URL and status
     """
-    logger.info(f"Starting article generation for topic: {topic}")
+    logger.info(f"Starting article generation with input type: {input_type}")
 
     # Create the swarm
     swarm = create_article_swarm()
 
-    # Craft the initial prompt
-    initial_prompt = f"""
-    Please write a comprehensive technical article for Dev.to on the following topic:
+    # Craft the initial prompt based on input type
+    if input_type == "topic":
+        initial_prompt = f"""
+        Please write a comprehensive technical article for Dev.to on the following topic:
 
-    Topic: {topic}
+        Topic: {input_data}
 
-    Requirements:
-    1. The article should be engaging, informative, and practical
-    2. Include code examples where appropriate
-    3. Target intermediate developers as the audience
-    4. The article should be 800-1500 words
+        Requirements:
+        1. The article should be engaging, informative, and practical
+        2. Include code examples where appropriate
+        3. Target intermediate developers as the audience
+        4. The article should be 800-1500 words
 
-    Start by writing the article, then coordinate with the image_agent for a cover image,
-    and finally work with the publisher_agent to submit it as a draft to Dev.to.
-    """
+        Start by writing the article, then coordinate with the image_agent for a cover image,
+        and finally work with the publisher_agent to submit it as a draft to Dev.to.
+        """
+    elif input_type == "file":
+        try:
+            with open(input_data, 'r', encoding='utf-8') as f:
+                content = f.read()
+            initial_prompt = f"""
+            Please create a comprehensive technical article for Dev.to based on the following content:
+
+            Source Content:
+            {content}
+
+            Requirements:
+            1. Transform this content into an engaging Dev.to article
+            2. Restructure and enhance the content for better readability
+            3. Add practical insights and examples where appropriate
+            4. Target intermediate developers as the audience
+            5. The article should be 800-1500 words
+
+            Start by writing the article, then coordinate with the image_agent for a cover image,
+            and finally work with the publisher_agent to submit it as a draft to Dev.to.
+            """
+        except FileNotFoundError:
+            logger.error(f"File not found: {input_data}")
+            return {"status": "error", "error": f"File not found: {input_data}"}
+        except Exception as e:
+            logger.error(f"Error reading file: {e}")
+            return {"status": "error", "error": f"Error reading file: {e}"}
+    else:  # content
+        initial_prompt = f"""
+        Please create a comprehensive technical article for Dev.to based on the following content:
+
+        Source Content:
+        {input_data}
+
+        Requirements:
+        1. Transform this content into an engaging Dev.to article
+        2. Restructure and enhance the content for better readability
+        3. Add practical insights and examples where appropriate
+        4. Target intermediate developers as the audience
+        5. The article should be 800-1500 words
+
+        Start by writing the article, then coordinate with the image_agent for a cover image,
+        and finally work with the publisher_agent to submit it as a draft to Dev.to.
+        """
 
     # Execute the swarm
     try:
@@ -146,14 +193,29 @@ def main():
     # Load environment variables from .env file
     load_dotenv()
 
-    # Check for topic argument
+    # Check for arguments
     if len(sys.argv) < 2:
-        print("Usage: python main.py \"Your article topic here\"")
-        print("\nExample:")
+        print("Usage:")
+        print('  python main.py "Your article topic here"')
+        print('  python main.py --file path/to/transcript.txt')
+        print('  python main.py --file path/to/article.md')
+        print('  python main.py --content "Your content here"')
+        print("\nExamples:")
         print('  python main.py "Getting Started with Amazon Strands Agents SDK"')
+        print('  python main.py --file transcript.txt')
+        print('  python main.py --content "$(cat my_article.md)"')
         sys.exit(1)
 
-    topic = sys.argv[1]
+    # Parse arguments
+    input_type = "topic"
+    input_data = sys.argv[1]
+
+    if sys.argv[1] == "--file" and len(sys.argv) >= 3:
+        input_type = "file"
+        input_data = sys.argv[2]
+    elif sys.argv[1] == "--content" and len(sys.argv) >= 3:
+        input_type = "content"
+        input_data = sys.argv[2]
 
     # Validate environment
     if not validate_environment():
@@ -162,12 +224,19 @@ def main():
     print("\n" + "=" * 60)
     print("  Dev.to Article Generator - Powered by Strands Agents")
     print("=" * 60)
-    print(f"\nTopic: {topic}\n")
+    
+    if input_type == "topic":
+        print(f"\nTopic: {input_data}\n")
+    elif input_type == "file":
+        print(f"\nInput File: {input_data}\n")
+    else:
+        print(f"\nInput Content: {input_data[:100]}{'...' if len(input_data) > 100 else ''}\n")
+    
     print("Starting agent swarm...")
     print("-" * 60 + "\n")
 
     # Generate the article
-    result = generate_article(topic)
+    result = generate_article(input_data, input_type)
 
     print("\n" + "-" * 60)
     print("RESULT:")

@@ -187,10 +187,24 @@ AWS_REGION=us-east-1
 
 ### Basic Usage
 
-Generate and publish an article on any topic:
+Generate and publish an article from different input types:
 
+**From a topic:**
 ```bash
 python main.py "Your Article Topic Here"
+```
+
+**From a file (transcript, markdown, etc.):**
+```bash
+python main.py --file path/to/your/content.txt
+python main.py --file transcript.md
+```
+
+**From direct content:**
+```bash
+python main.py --content "Your content here"
+# Or from a file using shell substitution:
+python main.py --content "$(cat my_article.md)"
 ```
 
 ### Examples
@@ -205,9 +219,19 @@ python main.py "Getting Started with FastAPI"
 python main.py "Docker Best Practices for Production"
 ```
 
-**Example 3: Create a JavaScript guide**
+**Example 4: Transform a video transcript**
 ```bash
-python main.py "Understanding JavaScript Promises and Async/Await"
+python main.py --file conference_talk_transcript.txt
+```
+
+**Example 5: Convert existing markdown content**
+```bash
+python main.py --file technical_notes.md
+```
+
+**Example 6: Process content directly**
+```bash
+python main.py --content "Today I learned about microservices architecture..."
 ```
 
 ### What Happens Next
