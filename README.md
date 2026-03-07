@@ -114,7 +114,7 @@ Publisher Agent:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/devtoagent.git
+git clone https://github.com/giolaq/devtoagent.git
 cd devtoagent
 ```
 
